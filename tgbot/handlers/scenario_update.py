@@ -33,8 +33,8 @@ async def start_scenario(message: Message, db_session: DatabasePSQL, state: FSMC
             "Вам нужны 15 минут и наушники. Начнем?")
 
     await message.answer(text, reply_markup=await scenario_uodate.welcome_step())
-    await db_session.add_reminder(message.from_user.id, 'start', 15)
-    await db_session.add_reminder(message.from_user.id, 'start24', 30)
+    await db_session.add_reminder(message.from_user.id, 'start', 60*15)
+    await db_session.add_reminder(message.from_user.id, 'start24', 60*30)
 
 
 # Шаг 1 - сбор e-mail
@@ -216,17 +216,17 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
             await query.message.answer_photo(FSInputFile(f"media/{image_file}"))
             await query.message.answer_audio(FSInputFile(f"media/{audio_file}"),
                                             reply_markup=await scenario_uodate.continue_step())
-            await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+            await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
 
 @scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "continue" ), StateFilter(Scenario.post_audio_choice))
 async def send_audio_and_image2(query: types.CallbackQuery, state: FSMContext, config, db_session: DatabasePSQL):
     await query.bot.answer_callback_query(query.id)
-    await db_session.cancel_reminder(query.from_user.id, 'after_pay', 10)
+    await db_session.cancel_reminder(query.from_user.id, 'after_pay')
     data = await state.get_data()
     print(data)
-    await db_session.add_reminder(query.from_user.id, "choice_audio_reminder", 3)
+    await db_session.add_reminder(query.from_user.id, "choice_audio_reminder", 60*30)
     await query.message.answer("Не торопись, дай себе время прочувствовать свой опыт до конца", reply_markup=await scenario_uodate.continue_now())
-    await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+    await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
 
 
 @scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "continuenow" ), StateFilter(Scenario.post_audio_choice))
@@ -253,7 +253,7 @@ async def send_audio_and_image2(query: types.CallbackQuery, state: FSMContext, c
     await query.message.answer_audio(FSInputFile(f"media/{audio_file}"),
                                             reply_markup=await scenario_uodate.continue_step())
     await state.set_state(Scenario.finish)
-    await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+    await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
     
 
 
@@ -262,7 +262,7 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
     await query.bot.answer_callback_query(query.id)
     await db_session.cancel_reminder(query.from_user.id, 'after_pay')
     await query.message.answer('“Ну что же, кажется, пора завершать?', reply_markup=await scenario_uodate.finishyes())
-    await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+    await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
 
 
 
@@ -273,7 +273,7 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
     audio_file = "В завершение.mp3"
     await query.message.answer_audio(FSInputFile(f"media/{audio_file}"),
                                             reply_markup=await scenario_uodate.continue_step())
-    await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+    await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
     
     
 @scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "continue"), StateFilter(Scenario.finish))
@@ -296,7 +296,7 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
                                reply_markup=await scenario_uodate.next_action_step())
     await state.set_state(Scenario.after_audio_options)
     try:
-        await db_session.add_reminder(query.from_user.id, "firstpay", 10)
+        await db_session.add_reminder(query.from_user.id, "firstpay", 60*30)
     except Exception as e:
             print(f"Ошибка: {e}")
 
@@ -377,7 +377,7 @@ async def checkoplaya(query: types.CallbackQuery, state: FSMContext, db_session:
 из художников мы продолжим путь\
 помни, что ты можешь идти со своим запросом", reply_markup=await scenario_uodate.audio_choice_without(choice_audio))
         await state.set_state(Scenario.post_audio_choice)
-        await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+        await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
         
 
 
@@ -401,7 +401,7 @@ async def check_promo(message: Message, db_session: DatabasePSQL, state: FSMCont
         await message.answer("Теперь все готово. Выбирай, с кем\
 из художников мы продолжим путь\
 помни, что ты можешь идти со своим запросом", reply_markup=await scenario_uodate.audio_choice_without(choice_audio))
-        await db_session.add_reminder(message.from_user.id, "after_pay", 10)
+        await db_session.add_reminder(message.from_user.id, "after_pay", 60*30)
         await state.set_state(Scenario.post_audio_choice)
     else:
         await message.answer("Неверный промокод. Попробуй еще раз или оплати доступ.")
