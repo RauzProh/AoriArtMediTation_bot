@@ -1,0 +1,12 @@
+[Unit]
+Description=Web AoriArtMediTation
+After=network.target
+
+[Service]
+Group=www-data
+WorkingDirectory=/root/AoriArtMediTation_bot/web
+Environment="PATH=/root/AoriArtMediTation_bot/venv/bin"
+ExecStart=/root/AoriArtMediTation_bot/venv/bin/gunicorn -w 1 -k custom_uv_worker.MyUvicornWorker --bind 0.0.0.0:8093 asgi:asgi_app
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=AoriArtMediTation bot
+After=network.target
+
+[Service]
+User=root
+Type=simple
+WorkingDirectory=/root/AoriArtMediTation_bot
+ExecStart=/root/AoriArtMediTation_bott/venv/bin/python3 bot.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
