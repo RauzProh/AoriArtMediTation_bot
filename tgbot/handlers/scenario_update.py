@@ -436,7 +436,7 @@ async def offline_event(query: types.CallbackQuery, state: FSMContext, db_sessio
         payment_url = await create_payment(amount=4900, email=mail, gift=False)
         print(payment_url)
         await state.update_data(payment_link=payment_url)
-        await query.message.answer("Ссылка для покупки билета 4900 руб", reply_markup=scenario_uodate.check_pay_buttons(payment_url))
+        await query.message.answer("Ссылка для покупки билета 4900 руб", reply_markup=scenario_uodate.check_pay_buttons2(payment_url))
     elif query.data == "ticket_info":
         await query.message.answer("“Уютное пространство. Узкий круг людей. Качественное время за обсуждением великой\
 картины. Опыт глубокого диалога с искусством. Радость и наполненность. Соединенность с\

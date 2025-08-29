@@ -141,7 +141,7 @@ async def check_pay_buttons(pay_id):
     keyboard.adjust(1, 1)
     return keyboard.as_markup()
 
-async def check_pay_buttons(pay_id):
+async def check_pay_buttons2(pay_id):
     print("Генерация кнопок")
     print(pay_id)
     keyboard = InlineKeyboardBuilder()
