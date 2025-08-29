@@ -33,8 +33,8 @@ async def start_scenario(message: Message, db_session: DatabasePSQL, state: FSMC
             "Вам нужны 15 минут и наушники. Начнем?")
 
     await message.answer(text, reply_markup=await scenario_uodate.welcome_step())
-    await db_session.add_reminder(message.from_user.id, 'start', 60*15)
-    await db_session.add_reminder(message.from_user.id, 'start24', 60*30)
+    await db_session.add_reminder(message.from_user.id, 'start', 60*30)
+    await db_session.add_reminder(message.from_user.id, 'start24', 60*45)
 
 
 # Шаг 1 - сбор e-mail
@@ -50,8 +50,8 @@ async def step_1_email(query: types.CallbackQuery, state: FSMContext, db_session
     )
     await state.set_state(Scenario.get_email)
 
-    await db_session.add_reminder(query.from_user.id, "email", 15)
-    await db_session.add_reminder(query.from_user.id, "email24", 30)
+    await db_session.add_reminder(query.from_user.id, "email", 60*3)
+    await db_session.add_reminder(query.from_user.id, "email24", 60*30)
 
     # # Напоминалки
     # set_delayed_message(chat_id=query.message.chat.id, delay=180,
@@ -140,6 +140,7 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
     await db_session.cancel_reminder(query.from_user.id, 'choice_audio24')
     await state.update_data(audio_choice=query.data)
     await state.set_state(Scenario.audio_choice)
+    await query.message.answer("Прекрасный выбор! Тогда в путь. Следуй за моим голосом")
     await query.message.answer_audio(FSInputFile(f"media/Настройся.mp3"),
                                     reply_markup=await scenario_uodate.continue_step())
     await db_session.add_reminder(query.from_user.id, 'first_audio', 15)
@@ -396,7 +397,7 @@ async def checkoplaya(query: types.CallbackQuery, state: FSMContext, db_session:
 из художников мы продолжим путь\
 помни, что ты можешь идти со своим запросом", reply_markup=await scenario_uodate.audio_choice_without(choice_audio))
         await state.set_state(Scenario.post_audio_choice)
-        await db_session.add_reminder(query.from_user.id, "after_pay", 10)
+        await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
         
 
 
