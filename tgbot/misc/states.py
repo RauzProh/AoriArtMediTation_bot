@@ -20,6 +20,7 @@ class Scenario(StatesGroup):
     payment = State()
     enter_promo = State()
     finish = State()
+    after_finish = State()
      
 
 class Subscription(StatesGroup):

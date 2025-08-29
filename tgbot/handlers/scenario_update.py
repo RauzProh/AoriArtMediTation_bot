@@ -251,7 +251,7 @@ async def send_audio_and_image2(query: types.CallbackQuery, state: FSMContext, c
         image_file = "Дюрер.jpg" 
     await query.message.answer_photo(FSInputFile(f"media/{image_file}"))
     await query.message.answer_audio(FSInputFile(f"media/{audio_file}"),
-                                            reply_markup=await scenario_uodate.continue_step())
+                                            reply_markup=await scenario_uodate.finish_contin())
     await state.set_state(Scenario.finish)
     await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
     
@@ -259,10 +259,14 @@ async def send_audio_and_image2(query: types.CallbackQuery, state: FSMContext, c
 
 @scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "finish"), StateFilter(Scenario.finish))
 async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_session: DatabasePSQL):
-    await query.bot.answer_callback_query(query.id)
-    await db_session.cancel_reminder(query.from_user.id, 'after_pay')
-    await query.message.answer('“Ну что же, кажется, пора завершать?', reply_markup=await scenario_uodate.finishyes())
-    await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
+    print('Проверка')
+    try:
+        await query.bot.answer_callback_query(query.id)
+        await db_session.cancel_reminder(query.from_user.id, 'after_pay')
+        await query.message.answer('Ну что же, кажется, пора завершать?', reply_markup=await scenario_uodate.finishyes())
+        await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
+    except Exception as e:
+            print(f"Ошибка: {e}")
 
 
 
@@ -274,15 +278,18 @@ async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_ses
     await query.message.answer_audio(FSInputFile(f"media/{audio_file}"),
                                             reply_markup=await scenario_uodate.continue_step())
     await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
+    await state.set_state(Scenario.after_finish)
     
     
-@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "continue"), StateFilter(Scenario.finish))
-async def after_audio_step(query: types.CallbackQuery, state: FSMContext):
+@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "continue"), StateFilter(Scenario.after_finish))
+async def after_audio_step(query: types.CallbackQuery, state: FSMContext, db_session: DatabasePSQL):
+    await db_session.cancel_reminder(query.from_user.id, 'after_pay')
     await query.bot.answer_callback_query(query.id)
     await query.message.answer("Я благодарю тебя за доверие и позволение этому опыту случиться.\n\n\
 Для меня будет высшим признанием, если ты захочешь подарить доступ кому-то из друзей\
 и остаться со мной на связи.\n\n\
 А я желаю тебе свободы творчества и мечты. И прощаюсь",reply_markup= await scenario_uodate.finish())
+    await db_session.add_reminder(query.from_user.id, "after_pay", 10)
 
 
 
@@ -310,22 +317,34 @@ async def branch_continue(query: types.CallbackQuery, state: FSMContext, db_sess
     await state.set_state(Scenario.payment)
 
 
-@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "share_feedback"), StateFilter(Scenario.after_audio_options))
+@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key == "share_feedback"))
 async def branch_continue(query: types.CallbackQuery, state: FSMContext, db_session: DatabasePSQL):
     await query.bot.answer_callback_query(query.id)
     await db_session.cancel_reminder(query.from_user.id, 'start')
+
+
+    
     await query.message.answer("Хочешь поделиться, что с тобой произошло?\
 Напиши свой отзыв текстом — я внимательно всё прочитаю 💌")
     await state.set_state(Scenario.feedback)
+    
+
 
 
 @scenario_router.message(Scenario.feedback)
 async def check_promo(message: Message, db_session: DatabasePSQL, state: FSMContext):
-    await message.answer("Спасибо, это очень ценно 🙏\n\n\
+    getaccec = await db_session.get_accesses(message.from_user.id)
+
+    #Удалить
+    getaccec = False
+    if getaccec:
+        pass
+    else:
+        await message.answer("Спасибо, это очень ценно 🙏\n\n\
 Твои слова помогают делать этот путь глубже и живее.\n\n\
 А теперь — куда идём дальше?", reply_markup = await scenario_uodate.after_feedback())
-    await db_session.add_impression(message.from_user.id, message.text)
-    await state.set_state(Scenario.after_audio_options)
+        await db_session.add_impression(message.from_user.id, message.text)
+        await state.set_state(Scenario.after_audio_options)
 
 # Оплата или промокод
 @scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key.in_({"buy", "gift", "promocode"})), StateFilter(Scenario.payment))
@@ -377,7 +396,7 @@ async def checkoplaya(query: types.CallbackQuery, state: FSMContext, db_session:
 из художников мы продолжим путь\
 помни, что ты можешь идти со своим запросом", reply_markup=await scenario_uodate.audio_choice_without(choice_audio))
         await state.set_state(Scenario.post_audio_choice)
-        await db_session.add_reminder(query.from_user.id, "after_pay", 60*30)
+        await db_session.add_reminder(query.from_user.id, "after_pay", 10)
         
 
 
@@ -408,18 +427,28 @@ async def check_promo(message: Message, db_session: DatabasePSQL, state: FSMCont
 
 
 # Ветка оффлайн-события
-@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key.in_({"ticket_buy", "ticket_info", "ticket_remind"})))
-async def offline_event(query: types.CallbackQuery):
+@scenario_router.callback_query(ScenarioCallbackData_update.filter(F.key.in_({"ticket_buy", "ticket_info", "ticket_remind", 'ticket_info_more'})))
+async def offline_event(query: types.CallbackQuery, state: FSMContext, db_session: DatabasePSQL):
     await query.bot.answer_callback_query(query.id)
     if query.data == "ticket_buy":
-        await query.message.answer("Ссылка для покупки билета 4900 руб: https://payment_link")
+        user = await db_session.get_mail_user(query.from_user.id)
+        mail = user['mail']
+        payment_url = await create_payment(amount=4900, email=mail, gift=False)
+        print(payment_url)
+        await state.update_data(payment_link=payment_url)
+        await query.message.answer("Ссылка для покупки билета 4900 руб", reply_markup=scenario_uodate.check_pay_buttons(payment_url))
     elif query.data == "ticket_info":
-        await query.message.answer("Описание оффлайн-события: камерное обсуждение шедевра, опыт глубины, контакт с искусством.")
+        await query.message.answer("“Уютное пространство. Узкий круг людей. Качественное время за обсуждением великой\
+картины. Опыт глубокого диалога с искусством. Радость и наполненность. Соединенность с\
+собой и контакт с другими. Ответы на свои вопросы\n\n\
+ХХ сентября, хх:хх, Москва\
+")
     elif query.data == "ticket_remind":
         # пример отложенного пуша через 3 часа
         asyncio.create_task(asyncio.sleep(10800))
         await query.message.answer("Напоминание: оффлайн-событие скоро, не пропусти!")
-
+    elif query.data == "ticket_info_more":
+        await query.message.answer("Больше информации")
 
 
 

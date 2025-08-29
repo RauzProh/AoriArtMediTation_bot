@@ -66,7 +66,14 @@ async def audio_choice_without2(selected):
     keyboard.adjust(1, 1)
     return keyboard.as_markup()
 
-async def finishyes(selected):
+
+async def finish_contin():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="Продолжить", callback_data=ScenarioCallbackData_update(key="finish"))
+    keyboard.adjust(1, 1)
+    return keyboard.as_markup()
+
+async def finishyes():
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="Кажется, да", callback_data=ScenarioCallbackData_update(key="yes"))
     keyboard.adjust(1, 1)
@@ -78,6 +85,7 @@ async def continue_step():
     keyboard.button(text="Продолжить", callback_data=ScenarioCallbackData_update(key="continue"))
     keyboard.adjust(1, 1)
     return keyboard.as_markup()
+    
 
 async def continue_now():
     keyboard = InlineKeyboardBuilder()
@@ -133,6 +141,15 @@ async def check_pay_buttons(pay_id):
     keyboard.adjust(1, 1)
     return keyboard.as_markup()
 
+async def check_pay_buttons(pay_id):
+    print("Генерация кнопок")
+    print(pay_id)
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="Оплатить", url=pay_id[1])
+    keyboard.button(text="Проверить оплату", callback_data=ScenarioCallbackData_update(key="oplata2"))
+    keyboard.adjust(1, 1)
+    return keyboard.as_markup()
+
 
 async def purchase_step_1(link):
     keyboard = InlineKeyboardBuilder()
@@ -173,8 +190,17 @@ async def final_step():
 # Шаг 9: Оффлайн-событие
 async def offline_event_step():
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="Купить билет за 4900 руб", callback_data=ScenarioCallbackData_update(key="buy_ticket"))
-    keyboard.button(text="Расскажи подробнее", callback_data=ScenarioCallbackData_update(key="offline_more_info"))
-    keyboard.button(text="Напомни позже", callback_data=ScenarioCallbackData_update(key="offline_remind"))
+    keyboard.button(text="Купить билет за 4900 руб", callback_data=ScenarioCallbackData_update(key="ticket_buy"))
+    keyboard.button(text="Расскажи подробнее", callback_data=ScenarioCallbackData_update(key="ticket_info"))
+    keyboard.button(text="Напомни позже", callback_data=ScenarioCallbackData_update(key="ticket_remind"))
+    keyboard.adjust(1, 1)
+    return keyboard.as_markup()
+
+
+async def offline_event_more():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="Купить билет за 4900 руб", callback_data=ScenarioCallbackData_update(key="ticket_buy"))
+    keyboard.button(text="Узнать больше", callback_data=ScenarioCallbackData_update(key="ticket_info_more"))
+   
     keyboard.adjust(1, 1)
     return keyboard.as_markup()
